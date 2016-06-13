@@ -10,20 +10,19 @@ class Item
 		@id = id
 		@model = model
 		@epc = epc
-		@policy = Hash.new
-		#@policy = JSON.parse(policy)
-		self.parse(JSON.parse(policy))
+		@policy = nil
+		self.parse(policy)
 	end
 
 	def parse (policy)
-		unless policy.nil?
-			policy.each do |key, val|
+		unless policy.nil? || policy.empty?
+			@policy = Hash.new
+
+			JSON.parse(policy).each do |key, val|
 				@policy[key] = TimeRestriction.new(val)
 			end
-		else
-			@policy = nil
 		end
-		#ogger.debug {"Item TimeRestriction #{@policy.inspect}"}
+		#logger.debug {"Item TimeRestriction #{@policy.inspect}"}
 	end
 
 	def isAllowed

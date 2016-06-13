@@ -16,14 +16,15 @@ begin
 	alarmGPIO = 15
 	antDoor = "1"
 	antDetection = "0"
-	mqttServer = "128.199.200.73"
+	mqttServer = "localhost"
 	mqttPort = 1883
-	mqttTopic = "/queue/zing/snipeit/door"
+	mqttSubTopic = "/queue/zing/snipeit/door"
+	mqttPubTopic = "/queue/zing/snipeit"
 
 	logger.debug { "DoorControl Client Starts..." }
 	detectioncontrol = DetectionController.new(alarmGPIO)
 	doorcontrol = DoorController.new(doorGPIO)
-	mqttcontrol = MqttController.new(mqttServer, mqttPort, mqttTopic)
+	mqttcontrol = MqttController.new(mqttServer, mqttPort, mqttSubTopic)
 	detectioncontrol.start
 	doorcontrol.start
 	mqttcontrol.start

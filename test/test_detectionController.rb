@@ -1,7 +1,6 @@
-#Add the default relative library location to the search path
-$: << File.join(File.dirname(__FILE__))
-$: << File.join(File.dirname(__FILE__),"/","Models")
-$: << File.join(File.dirname(__FILE__),"/","Controllers")
+$:.unshift File.expand_path("..", Dir.pwd)
+$:.unshift File.expand_path("../Models", Dir.pwd)
+$:.unshift File.expand_path("../Controllers", Dir.pwd)
 
 require "Logging"
 require "json"
@@ -12,7 +11,7 @@ require "detectionController"
 begin
 	Models::Checkout.new
 	prefix = "TAG"
-	epc = "400041443030303120202020202020202020"
+	epc = "AD000002"
 	reader = "Door"
 	antenna = "1"
 	timestamp = "1464955454".to_i

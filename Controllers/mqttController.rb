@@ -34,10 +34,12 @@ class MqttController
 					handleMessage(topic, message)
 				end
 			end
-			client.disconnect()
 
 		rescue MQTT::Exception => e
 			logger.debug {"Exception thrown: #{e.inspect}"}
+
+		ensure
+			client.disconnect()
 		end
 	end
 

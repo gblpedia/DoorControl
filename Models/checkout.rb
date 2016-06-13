@@ -13,7 +13,7 @@ module Models
 
 		def initialize
 			begin
-				@db = SQLite3::Database.open "sqlite.db"
+				@db = SQLite3::Database.open File.join(File.dirname(__FILE__),"..","sqlite.db")
 				@table = "checkout"
 				
 				self.load

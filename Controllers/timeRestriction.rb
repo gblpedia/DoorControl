@@ -1,4 +1,4 @@
-require "./Logging"
+
 
 class TimeRestriction
 	include Logging
