@@ -11,6 +11,7 @@ class DetectionController
 		@location = "Door"
 		@gpioAlarm = gpio;
 		@tagsQueue = Queue.new
+		@gpioFlag = false
 		logger.debug { "init #{self.class.name}" }
 	end
 
@@ -24,6 +25,7 @@ class DetectionController
 				# Need to put in configuration
 				pub = MqttPublisher.new("192.168.1.63", "/queue/zing/snipeit")
 				msg = Hash.new
+				msg["action"] = "Event"
 				
 				if Models::Checkout.items.has_key?(tag.epc)
 					# Checkout Item Detected
@@ -34,6 +36,7 @@ class DetectionController
 					msg["model"] = item.model
 					msg["epc"] = item.epc
 					msg["location"] = @location
+					msg["assigned_to"] = item.assigned_to
 
 				else
 					# Non-Checkout Item Detected
@@ -44,9 +47,11 @@ class DetectionController
 					msg["model"] = "Unknown"
 					msg["epc"] = tag.epc
 					msg["location"] = @location
+					msg["assigned_to"] = "Unknown"
 				end
 
 				pub.publish(msg)
+
 			else
 				logger.debug {"Non-AD Tag Ignored"}
 			end
@@ -58,10 +63,17 @@ class DetectionController
 	end
 
 	def toggle(gpio)
-		Thread.new {
-			logger.debug {"toggle GPIO #{gpio} on"}
-			sleep(2)
-			logger.debug {"toggle GPIO #{gpio} off"}
-		}
+		@toggleThread = Thread.new {
+			@gpioFlag = true
+			(1..10).each do |i|
+				logger.debug {"#{i} toggle GPIO #{gpio} on"}
+				system("sudo sh -c 'echo 0 > /sys/class/gpio/gpio#{gpio}/value'")
+				sleep(0.2)
+				logger.debug {"#{i} toggle GPIO #{gpio} off"}
+				system("sudo sh -c 'echo 1 > /sys/class/gpio/gpio#{gpio}/value'")
+				sleep(0.4)
+			end
+			@gpioFlag = false
+		} unless @gpioFlag
 	end
 end

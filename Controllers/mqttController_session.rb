@@ -21,9 +21,9 @@ class MqttController
 		@server = server
 		@port = port
 		@topic = topic
-		@client_id = 'zing_pi_door'
+		@sessionModel = Models::Session.new
+		@client_id = @sessionModel.getClientId(topic)
 		@client = nil
-		@pub = MqttPublisher.new(server, "/queue/zing/snipeit")
 		
 	end
 
@@ -33,40 +33,41 @@ class MqttController
 
 	def subscribe
 		begin
-			logger.debug {"MqttController starts a thread #{Thread.current.inspect}"}
+			logger.debug {"MqttController starts a thread"}
 
-			@client = MQTT::Client.connect(
-				:host => @server, 
-				:port => @port,
-				:client_id => @client_id,
-				:clean_session => false
-			)
-			logger.debug {"MqttController restores the session #{@client_id}"}
-
+			if @client_id.nil?
+				@client = MQTT::Client.connect(
+					:host => @server, 
+					:port => @port,
+				)
+				@client_id = @client.client_id
+				@sessionModel.create(@topic, @client_id)
+				logger.debug {"MqttController starts a new session #{@client_id}"}
+			else 
+				@client = MQTT::Client.connect(
+					:host => @server, 
+					:port => @port,
+					:client_id => @client_id,
+					:clean_session => false
+				)
+				logger.debug {"MqttController restores the session #{@client_id}"}
+			end
 
 			@client.subscribe(@topic => 1)
 
-			# MQTT connected, Retrieve all of checkout items
-			retrieveCheckoutList = {"action" => "CheckoutList"}
-			@pub.publish(retrieveCheckoutList)
-
-
 			@client.get(@topic) do |topic, message|
 				handleMessage(topic, message)
-				logger.debug {"#{@topic} left #{@client.queue_length} messages"}
 			end
 
-		rescue SystemExit, Interrupt, MQTT::Exception, SystemCallError => e
+		rescue SystemExit, Interrupt => e
+			logger.debug {"Interrupt: #{e.inspect}"}
+
+		rescue MQTT::Exception => e
 			logger.debug {"Exception thrown: #{e.inspect}"}
-			logger.info {"Re-Connect MQTT in 30s"}
-			sleep(30)
-			subscribe
 
 		ensure
-			if @client
-				@client.disconnect()
-				logger.debug {"MqttController #{@client.object_id} disconnect"} 
-			end
+			logger.debug {"MqttController disconnect"}
+			@client.disconnect()
 		end
 	end
 
@@ -76,17 +77,15 @@ class MqttController
 			msg = JSON.parse(message)
 			logger.debug {"#{msg.inspect}"}
 
-			if msg["CheckoutList"].nil? && msg["action"]
+			if msg["CheckoutList"].nil?
 				@@checkoutModel.send(msg["action"], msg["data"])
 
-			elsif msg["CheckoutList"]
+			else 
 				@@checkoutModel.send("deleteAll")
 
 				msg["CheckoutList"].each do |item|
 					@@checkoutModel.send(item["action"], item["data"])
 				end
-			else
-				logger.debug {"Wrong Message Format"}
 			end
 
 		rescue JSON::ParserError => e

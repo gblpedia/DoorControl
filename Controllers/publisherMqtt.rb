@@ -23,7 +23,7 @@ class MqttPublisher
 			MQTT::Client.connect(@host, 1883) do |c|
 		        @client = c
 
-		        timestamp = Time.new.strftime("%Y%m%d%H%M%S")
+		        timestamp = Time.new.localtime("+08:00").strftime("%Y%m%d%H%M%S")
 
 		        msg["timestamp"] = timestamp
 
@@ -31,11 +31,11 @@ class MqttPublisher
 		        logger.debug {"Publish #{msg.inspect} on #{@topic}"}
 		    end
 		
-		rescue MQTT::Exception => e
-			logger.debug {"Exception thrown: #{e.inspect}"}
+		rescue SystemExit, Interrupt, MQTT::Exception, SystemCallError => e
+			logger.debug {"Publisher Exception thrown: #{e.inspect}"}
 
 		ensure
-			@client.disconnect()
+			@client.disconnect() if @client
 		end
 
 	end

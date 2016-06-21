@@ -8,7 +8,7 @@ class Tag
 	attr_reader :epc, :reader, :antenna, :timestamp, :tzoffset
 
 	def initialize(data)
-		@epc = data[1]
+		@epc = [data[1]].pack('H*').strip
 		@reader = data[2]
 		@antenna = data[3]
 		@timestamp = data[4]
