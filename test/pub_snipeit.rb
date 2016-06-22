@@ -1,7 +1,9 @@
 require 'rubygems'
 require 'mqtt'
 
-MQTT::Client.connect('localhost', 1883) do |c|
+zing = 'zing.adilam.com.sg'
+
+MQTT::Client.connect(zing, 1883) do |c|
 	topic = '/queue/zing/snipeit'
         time = Time.new
 	timestamp = time.strftime("%Y%m%d%H%M%S")
