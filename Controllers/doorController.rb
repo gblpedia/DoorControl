@@ -22,61 +22,70 @@ class DoorController
 	end
 
 	def process
-		logger.debug { "DoorController Starts a thread" }
+		begin
+			logger.debug { "DoorController Starts a thread" }
 
-		# Need to put in configuration
-		pub = MqttPublisher.new("192.168.1.63", "/queue/zing/snipeit")
-		
-		while tag = @tagsQueue.pop
-			logger.debug { "DoorController Pops a tag \n#{tag.epc}" }
-
+			# Need to put in configuration
+			pub = MqttPublisher.new("192.168.1.63", "/queue/zing/snipeit")
 			
-			msg = Hash.new
-			msg["action"] = "Event"
+			while tag = @tagsQueue.pop
+				logger.debug { "DoorController Pops a tag \n#{tag.epc}" }
 
-			# Deteted Tags in checkout list or not
-			if Models::Checkout.items.has_key?(tag.epc)
+				
+				msg = Hash.new
+				msg["action"] = "Event"
 
-				item = Models::Checkout.items[tag.epc]
+				# Deteted Tags in checkout list or not
+				if Models::Checkout.items.has_key?(tag.epc)
 
-				if tag.antenna == @outside
-					
-					if item.model == 'UHF ISO CARD' && item.isAllowed
-						logger.debug {"Door Accessed In"}
+					item = Models::Checkout.items[tag.epc]
 
-						msg["event"] = "In"
-						toggle(@gpioDoor)
+					if tag.antenna == @outside
+						
+						if item.model == 'UHF ISO CARD' && item.isAllowed
+							logger.debug {"Door Accessed In"}
+
+							msg["event"] = "In"
+							toggle(@gpioDoor)
+
+						else
+							logger.debug {"Door Access Denied due to Policy"}
+							msg["event"] = "Denied"
+						end
 
 					else
-						logger.debug {"Door Access Denied due to Policy"}
-						msg["event"] = "Denied"
+						logger.debug {"Door Accessed Out, Always"}
+						msg["event"] = "Out"
+
+						# Alwasy allow peope go out
+						toggle(@gpioDoor)
 					end
 
-				else
-					logger.debug {"Door Accessed Out, Always"}
-					msg["event"] = "Out"
+					msg["model"] = item.model
+					msg["epc"] = item.epc
+					msg["location"] = @location
+					msg["assigned_to"] = item.assigned_to
 
-					# Alwasy allow peope go out
-					toggle(@gpioDoor)
+				else
+					logger.debug {"Door Access Denied due to unknown tag"}
+					
+					msg["event"] = "Denied"
+					msg["model"] = "Unknown"
+					msg["epc"] = tag.epc
+					msg["location"] = @location
+					msg["assigned_to"] = "Unknown"
 				end
 
-				msg["model"] = item.model
-				msg["epc"] = item.epc
-				msg["location"] = @location
-				msg["assigned_to"] = item.assigned_to
+				pub.publish(msg)
 
-			else
-				logger.debug {"Door Access Denied due to unknown tag"}
-				
-				msg["event"] = "Denied"
-				msg["model"] = "Unknown"
-				msg["epc"] = tag.epc
-				msg["location"] = @location
-				msg["assigned_to"] = "Unknown"
 			end
 
-			pub.publish(msg)
+		rescue Exception => e
+			logger.debug {"DoorController Exception thrown: #{e.inspect}"}
 
+		ensure
+			logger.info {"DoorController Re-Starts a thread"}
+			start
 		end
 	end
 

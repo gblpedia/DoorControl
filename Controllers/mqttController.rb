@@ -58,14 +58,15 @@ class MqttController
 
 		rescue SystemExit, Interrupt, MQTT::Exception, SystemCallError => e
 			logger.debug {"Exception thrown: #{e.inspect}"}
-			logger.info {"Re-Connect MQTT in 20s"}
-			sleep(20)
-			start
+			
 		ensure
 			if @client
 				@client.disconnect()
 				logger.debug {"MqttController #{@client.object_id} disconnect"} 
 			end
+			logger.info {"Re-Connect MQTT in 20s"}
+			sleep(20)
+			start
 		end
 	end
 

@@ -11,7 +11,7 @@ module Logging
 
   # Global, memoized, lazy initialized instance of a logger
   def self.logger
-    #@logger ||= Logger.new('access.log')
+    #@logger ||= Logger.new('access.log', 'daily')
     @logger ||= Logger.new(STDOUT)
   end
 end
