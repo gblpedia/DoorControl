@@ -89,7 +89,7 @@ class MqttController
 			end
 
 		rescue JSON::ParserError => e
-			logger.debug {"MqttController ParseError: #{e} from #{topic}"}
+			logger.debug {"MqttController ParserError: #{e} from #{topic}"}
 
 		rescue SQLite3::Exception => e
 			logger.debug {"Exception thrown: #{e.inspect}"}

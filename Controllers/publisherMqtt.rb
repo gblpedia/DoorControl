@@ -31,7 +31,7 @@ class MqttPublisher
 		        logger.debug {"Publish #{msg.inspect} on #{@topic}"}
 		    end
 		
-		rescue SystemExit, Interrupt, MQTT::Exception, SystemCallError => e
+		rescue SystemExit, Interrupt, MQTT::Exception, SystemCallError, Encoding::UndefinedConversionError => e
 			logger.debug {"Publisher Exception thrown: #{e.inspect}"}
 
 		ensure
